@@ -1,0 +1,35 @@
+---
+// home: por ahora solo el hero con el nombre
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Ariel Bosquez">
+  <div class="container">
+    <section class="hero">
+      <h1 class="hero-name">Ariel Bosquez</h1>
+      <p class="hero-sub">
+        Estudiante de Ingeniería en Ciberseguridad en INACAP Chile y
+        desarrollador full stack.
+      </p>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .hero {
+    padding: 4rem 0;
+  }
+
+  .hero-name {
+    font-size: clamp(2.2rem, 7vw, 3.5rem);
+    color: var(--color-text);
+    margin: 0 0 0.75rem;
+  }
+
+  .hero-sub {
+    font-family: var(--font-sans);
+    color: var(--color-muted);
+    max-width: 520px;
+    font-size: 0.95rem;
+  }
+</style>

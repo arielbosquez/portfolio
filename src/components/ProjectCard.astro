@@ -1,0 +1,35 @@
+---
+// tarjeta basica de proyecto, titulo y descripcion nomas
+interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<article class="project-card">
+  <h3 class="project-title">{title}</h3>
+  <p class="project-desc">{description}</p>
+</article>
+
+<style>
+  .project-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    padding: 1rem 1.2rem;
+  }
+
+  .project-title {
+    font-size: 0.95rem;
+    color: var(--color-green);
+    margin: 0 0 0.4rem;
+  }
+
+  .project-desc {
+    font-size: 0.85rem;
+    color: var(--color-text);
+    margin: 0;
+  }
+</style>

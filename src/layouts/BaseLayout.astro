@@ -1,0 +1,172 @@
+---
+// layout base, lo comparten todas las paginas (nav + footer)
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = 'Portafolio de Ariel Bosquez.'
+} = Astro.props;
+
+const navLinks = [
+  { href: '/', label: 'inicio' },
+  { href: '/projects', label: 'proyectos' },
+  { href: '/skills', label: 'habilidades' }
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="author" content="Ariel Bosquez" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="container nav" aria-label="Navegación principal">
+        <a href="/" class="nav-brand" aria-label="Inicio">
+          <span class="nav-brand-user">ariel@bosquez</span><span class="nav-brand-sep">:</span><span class="nav-brand-path">~</span><span class="nav-brand-sep">$</span>
+        </a>
+        <ul class="nav-links">
+          {
+            navLinks.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class:list={[
+                    'nav-link',
+                    { active: currentPath === link.href.replace(/\/$/, '') }
+                  ]}
+                >
+                  ./{link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <slot />
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <span class="footer-text">
+          ariel bosquez — ingeniería en ciberseguridad · inacap
+        </span>
+        <span class="footer-links">
+          <a href="https://github.com/arielbosquez" target="_blank" rel="noopener noreferrer">github</a>
+          <span class="footer-sep">·</span>
+          <a href="https://www.linkedin.com/in/arielbosquez" target="_blank" rel="noopener noreferrer">linkedin</a>
+        </span>
+      </div>
+    </footer>
+
+    <style>
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        background: rgba(10, 10, 15, 0.92);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--border);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        height: 52px;
+        gap: 1rem;
+      }
+
+      .nav-brand {
+        font-size: 0.85rem;
+        color: var(--color-text);
+        white-space: nowrap;
+      }
+      .nav-brand:hover {
+        text-decoration: none;
+      }
+      .nav-brand-user {
+        color: var(--color-green);
+      }
+      .nav-brand-sep {
+        color: var(--color-muted);
+      }
+      .nav-brand-path {
+        color: var(--color-violet);
+      }
+
+      .nav-links {
+        display: flex;
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        gap: 1.25rem;
+      }
+
+      .nav-link {
+        font-size: 0.82rem;
+        color: var(--color-muted);
+        transition: color 0.15s ease;
+      }
+      .nav-link:hover {
+        color: var(--color-green);
+        text-decoration: none;
+      }
+      .nav-link.active {
+        color: var(--color-green);
+      }
+
+      .site-footer {
+        border-top: 1px solid var(--border);
+        margin-top: 4rem;
+        padding: 1.25rem 0;
+      }
+
+      .footer-inner {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.78rem;
+        color: var(--color-muted);
+      }
+
+      .footer-links a {
+        color: var(--color-muted);
+      }
+      .footer-links a:hover {
+        color: var(--color-green);
+      }
+      .footer-sep {
+        margin: 0 0.4rem;
+      }
+
+      @media (max-width: 560px) {
+        .nav-brand {
+          display: none;
+        }
+        .nav-links {
+          width: 100%;
+          justify-content: space-around;
+          gap: 0.5rem;
+        }
+      }
+    </style>
+  </body>
+</html>

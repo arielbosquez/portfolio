@@ -1,0 +1,151 @@
+/* variables del tema. todo gira en torno al verde y al violeta */
+
+:root {
+  /* colores base */
+  --color-bg: #0a0a0f;
+  --color-surface: #14141f; /* tarjetas y paneles */
+  --color-text: #e2e8f0;
+  --color-muted: #8892a4; /* texto secundario */
+
+  /* acentos */
+  --color-green: #00ff9d; /* el verde de siempre, cursor y bordes */
+  --color-green-dim: rgba(0, 255, 157, 0.55);
+  --color-violet: #7c3aed; /* secundario, badges */
+  --color-alert: #ff3366; /* rojo de critico / red team */
+
+  /* bordes */
+  --border: rgba(0, 255, 157, 0.3);
+  --border-active: 1px solid var(--color-violet); /* el que esta seleccionado */
+  --border-soft: rgba(136, 146, 164, 0.18);
+
+  --font-mono: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas,
+    'Liberation Mono', monospace;
+  --font-sans: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  --radius: 2px;
+  --max-width: 1080px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--color-green);
+  color: var(--color-bg);
+}
+
+/* scrollbar verde para que pegue con el resto */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 157, 0.25);
+  border: 2px solid var(--color-bg);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 157, 0.45);
+}
+
+a {
+  color: var(--color-violet);
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  line-height: 1.25;
+  margin: 0 0 0.6em;
+}
+
+p {
+  font-family: var(--font-sans);
+  margin: 0 0 1em;
+}
+
+code {
+  font-family: var(--font-mono);
+  color: var(--color-green);
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+/* titulo de seccion, le meto el ❯ adelante */
+.section-title {
+  font-size: 1.15rem;
+  color: var(--color-text);
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.section-title::before {
+  content: '❯';
+  color: var(--color-green);
+}
+.section-title .path {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+  font-weight: 400;
+}
+
+/* badge generico que reuso en varios lados */
+.badge {
+  display: inline-block;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.45rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  text-transform: uppercase;
+}
+.badge--green {
+  color: var(--color-green);
+}
+.badge--violet {
+  color: var(--color-violet);
+}
+.badge--alert {
+  color: var(--color-alert);
+  text-shadow: 0 0 8px rgba(255, 51, 102, 0.45); /* glow solo aca */
+}
+.badge--muted {
+  color: var(--color-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
