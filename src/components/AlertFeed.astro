@@ -1,0 +1,242 @@
+---
+// ticker estilo SOC. va rotando entradas de blue team / GRC con su hora
+---
+
+<section class="feed-section fade-in" aria-label="Feed de inteligencia SOC">
+  <div class="feed">
+    <div class="feed-bar">
+      <span class="feed-title">soc://intel-feed</span>
+      <span class="feed-status"><span class="feed-status-dot"></span>en vivo</span>
+      <span class="feed-clock" id="feed-clock">--:--:--</span>
+    </div>
+    <ul class="feed-list" id="feed-list" role="log" aria-live="polite"></ul>
+  </div>
+</section>
+
+<script>
+  // cada categoria pinta de un color distinto
+  const SEVERITY = {
+    INFO: 'sev-info',
+    ALERT: 'sev-alert',
+    CRITICAL: 'sev-critical',
+    FRAMEWORK: 'sev-framework',
+    REGULATION: 'sev-regulation'
+  };
+
+  // cosas reales que voy estudiando: marcos, leyes, TTPs, SOC
+  const entries = [
+    {
+      sev: 'FRAMEWORK',
+      text: 'NIST SP 800-61 Rev.2 — Ciclo de respuesta a incidentes: Preparación → Detección → Contención → Erradicación → Recuperación'
+    },
+    {
+      sev: 'REGULATION',
+      text: 'Ley Marco Ciberseguridad 21.663 — Operadores de Importancia Vital (OIV) obligados a reportar incidentes críticos en 72h'
+    },
+    {
+      sev: 'ALERT',
+      text: 'MITRE ATT&CK T1566.001 — Spearphishing Attachment: vector de acceso inicial frecuente en campañas dirigidas'
+    },
+    {
+      sev: 'INFO',
+      text: 'Regla de correlación: auth fallida > 5 intentos en 60s → alerta de fuerza bruta (SIEM: Splunk / Elastic)'
+    },
+    {
+      sev: 'CRITICAL',
+      text: 'LockBit 4.0 — Modelo RaaS, doble extorsión, apunta a infraestructura crítica. Comportamiento clasificado APT'
+    },
+    {
+      sev: 'FRAMEWORK',
+      text: 'ISO/IEC 27001 — Control A.8.15 del Anexo A: logging y monitoreo como control obligatorio para OIVs'
+    },
+    {
+      sev: 'ALERT',
+      text: 'Escalada de privilegios vía sudoers mal configurado — paso post-explotación común en hosts Linux (HTB: Silentium)'
+    },
+    {
+      sev: 'INFO',
+      text: 'MITRE ATT&CK T1110 — Brute Force: mitigación primaria con lockout policy y MFA en cuentas expuestas'
+    },
+    {
+      sev: 'REGULATION',
+      text: 'Ley 21.663 — ANCI como autoridad: facultad de fiscalizar y sancionar incumplimientos de reporte'
+    },
+    {
+      sev: 'CRITICAL',
+      text: 'CVE-2025-8110 — Escalada de privilegios en Gogs: parchear o aislar instancias expuestas a internet'
+    },
+    {
+      sev: 'FRAMEWORK',
+      text: 'NIST CSF 2.0 — Funciones: Govern, Identify, Protect, Detect, Respond, Recover'
+    },
+    {
+      sev: 'INFO',
+      text: 'Triage SOC: priorizar por criticidad de activo + confiabilidad de la fuente antes de escalar a N2'
+    }
+  ];
+
+  const list = document.getElementById('feed-list');
+  const clock = document.getElementById('feed-clock');
+  const MAX_VISIBLE = 6;
+  let index = 0;
+
+  // relojito del header
+  function updateClock() {
+    const now = new Date();
+    clock.textContent = now.toLocaleTimeString('es-CL', { hour12: false });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  function timestamp() {
+    const now = new Date();
+    return now.toLocaleTimeString('es-CL', { hour12: false });
+  }
+
+  function pushEntry() {
+    const entry = entries[index % entries.length];
+    index++;
+
+    const li = document.createElement('li');
+    li.className = 'feed-item';
+
+    const time = document.createElement('span');
+    time.className = 'feed-time';
+    time.textContent = timestamp();
+
+    const badge = document.createElement('span');
+    badge.className = `feed-badge ${SEVERITY[entry.sev]}`;
+    badge.textContent = `[${entry.sev}]`;
+
+    const text = document.createElement('span');
+    text.className = 'feed-text';
+    text.textContent = entry.text;
+
+    li.append(time, badge, text);
+    list.prepend(li);
+
+    // sin esto la animacion de entrada no se dispara
+    requestAnimationFrame(() => li.classList.add('visible'));
+
+    // saco los viejos para que no se acumulen
+    while (list.children.length > MAX_VISIBLE) {
+      list.removeChild(list.lastElementChild);
+    }
+  }
+
+  // tiro las primeras 3 escalonadas y despues que siga solo
+  pushEntry();
+  setTimeout(pushEntry, 600);
+  setTimeout(pushEntry, 1200);
+  setInterval(pushEntry, 4500);
+</script>
+
+<style is:global>
+  .feed-section {
+    margin: 2rem 0;
+  }
+
+  .feed {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .feed-bar {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0.85rem;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.72rem;
+  }
+
+  .feed-title {
+    color: var(--color-green);
+  }
+
+  .feed-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-size: 0.65rem;
+  }
+
+  .feed-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--color-green);
+    animation: blink 1.6s steps(1) infinite;
+  }
+
+  .feed-clock {
+    margin-left: auto;
+    color: var(--color-muted);
+  }
+
+  .feed-list {
+    list-style: none;
+    margin: 0;
+    padding: 0.5rem 0;
+    min-height: 200px;
+  }
+
+  .feed-item {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding: 0.32rem 0.85rem;
+    font-size: 0.76rem;
+    line-height: 1.5;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .feed-item.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .feed-time {
+    color: var(--color-muted);
+    flex-shrink: 0;
+    font-size: 0.68rem;
+  }
+
+  .feed-badge {
+    flex-shrink: 0;
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+
+  .sev-info,
+  .sev-framework {
+    color: var(--color-green);
+  }
+  .sev-alert {
+    color: var(--color-alert);
+    opacity: 0.85;
+  }
+  .sev-critical {
+    color: var(--color-alert);
+    /* glow solo en los critical */
+    text-shadow: 0 0 8px rgba(255, 51, 102, 0.5);
+  }
+  .sev-regulation {
+    color: var(--color-violet);
+  }
+
+  .feed-text {
+    color: var(--color-text);
+  }
+
+  @media (max-width: 560px) {
+    .feed-item {
+      flex-wrap: wrap;
+    }
+  }
+</style>
