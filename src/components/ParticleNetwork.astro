@@ -1,0 +1,161 @@
+---
+// fondo de puntitos conectados con lineas
+// los que estan cerca del mouse se acercan un poco. canvas fijo atras de todo
+---
+
+<canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.getElementById('particle-canvas');
+  const ctx = canvas.getContext('2d');
+
+  const LINK_DIST = 120; // hasta aca dibujo linea entre dos puntos
+  const MOUSE_DIST = 150; // radio donde el mouse los atrae
+  const MAX_PARTICLES = 100;
+
+  // en touch no hay mouse, asi que la atraccion la apago
+  const supportsHover = window.matchMedia('(hover: hover)').matches;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+  let particles = [];
+  let mouseX = -9999;
+  let mouseY = -9999;
+
+  function particleCount() {
+    if (width < 768) return 30; 
+    return Math.min(MAX_PARTICLES, Math.max(60, Math.round((width * height) / 16000)));
+  }
+
+  function createParticle() {
+    return {
+      x: Math.random() * width,
+      y: Math.random() * height,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      alpha: 0.4 + Math.random() * 0.2,
+      near: false // si esta cerca del mouse este frame
+    };
+  }
+
+  function resize() {
+    width = window.innerWidth;
+    height = window.innerHeight;
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // agrego o saco puntos segun el tamaño nuevo, sin reiniciar los que ya hay
+    const target = particleCount();
+    while (particles.length < target) particles.push(createParticle());
+    particles.length = target;
+  }
+
+  function step() {
+    for (const p of particles) {
+      p.near = false;
+      if (supportsHover) {
+        // si esta dentro del radio lo empujo un toque hacia el mouse
+        const dx = mouseX - p.x;
+        const dy = mouseY - p.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < MOUSE_DIST && dist > 1) {
+          p.near = true;
+          p.vx += (dx / dist) * 0.012;
+          p.vy += (dy / dist) * 0.012;
+        }
+      }
+
+      // les pongo un techo de velocidad asi no se vuelven locos
+      const speed = Math.hypot(p.vx, p.vy);
+      if (speed > 0.6) {
+        p.vx = (p.vx / speed) * 0.6;
+        p.vy = (p.vy / speed) * 0.6;
+      }
+
+      p.x += p.vx;
+      p.y += p.vy;
+
+      // rebotan contra los bordes
+      if (p.x <= 0 || p.x >= width) p.vx *= -1;
+      if (p.y <= 0 || p.y >= height) p.vy *= -1;
+      p.x = Math.max(0, Math.min(width, p.x));
+      p.y = Math.max(0, Math.min(height, p.y));
+    }
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    // uno con linea todos los pares que esten cerca
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < particles.length; i++) {
+      const a = particles[i];
+      for (let j = i + 1; j < particles.length; j++) {
+        const b = particles[j];
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        const distSq = dx * dx + dy * dy;
+        if (distSq > LINK_DIST * LINK_DIST) continue;
+
+        const t = 1 - Math.sqrt(distSq) / LINK_DIST;
+        if (a.near || b.near) {
+          // si esta cerca del mouse la pinto verde y mas fuerte
+          ctx.strokeStyle = `rgba(0, 255, 157, ${0.5 * t})`;
+        } else {
+          ctx.strokeStyle = `rgba(124, 58, 237, ${0.15 + 0.1 * t})`;
+        }
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+    }
+
+    // y ahora los puntos arriba
+    for (const p of particles) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 1, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(0, 255, 157, ${p.alpha})`;
+      ctx.fill();
+    }
+  }
+
+  function frame() {
+    step();
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  if (supportsHover) {
+    window.addEventListener('mousemove', (e) => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+    window.addEventListener('mouseout', () => {
+      mouseX = -9999;
+      mouseY = -9999;
+    });
+  }
+
+  window.addEventListener('resize', resize);
+
+  resize();
+  if (reduceMotion) {
+    draw(); // si el user pidio menos animacion, dibujo una sola vez y listo
+  } else {
+    requestAnimationFrame(frame);
+  }
+</script>
+
+<style>
+  #particle-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+  }
+</style>

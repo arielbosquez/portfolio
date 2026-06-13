@@ -1,0 +1,164 @@
+---
+// el bloque de arriba con el nombre. el efecto scanline del nombre.
+---
+
+<section class="hero" aria-label="Presentación">
+  <div class="hero-meta">
+    <span class="hero-meta-item">sesión iniciada</span>
+    <span class="hero-meta-item">tty1</span>
+    <span class="hero-meta-item" id="hero-uptime">uptime: 00:00:00</span>
+  </div>
+
+  <h1 class="hero-name" data-text="Ariel Bosquez">Ariel Bosquez</h1>
+
+  <p class="hero-role" aria-live="polite">
+    <span class="hero-role-prefix">&gt;</span>
+    <span id="role-text"></span><span class="cursor-block" aria-hidden="true"></span>
+  </p>
+
+  <p class="hero-sub">
+    Estudiante de Ingeniería en Ciberseguridad en INACAP Chile y desarrollador full stack. Proyectos en Python, seguridad ofensiva/defensiva y desarrollo web.
+  </p>
+</section>
+
+<script>
+  // los roles que se van escribiendo y borrando solos
+  const roles = [
+    'Estudiante de Ciberseguridad',
+    'Analista Programador',
+    'Blue Team Enthusiast',
+    'Desarrollador Full Stack',
+    'Open to Internships'
+  ];
+
+  const target = document.getElementById('role-text');
+  if (target) {
+    let roleIndex = 0;
+    let charIndex = 0;
+    let deleting = false;
+
+    const TYPE_MS = 70;
+    const DELETE_MS = 35;
+    const HOLD_MS = 1800;
+
+    function tick() {
+      const role = roles[roleIndex];
+
+      if (!deleting) {
+        charIndex++;
+        target.textContent = role.slice(0, charIndex);
+        if (charIndex === role.length) {
+          deleting = true;
+          setTimeout(tick, HOLD_MS);
+          return;
+        }
+        setTimeout(tick, TYPE_MS);
+      } else {
+        charIndex--;
+        target.textContent = role.slice(0, charIndex);
+        if (charIndex === 0) {
+          deleting = false;
+          roleIndex = (roleIndex + 1) % roles.length;
+        }
+        setTimeout(tick, DELETE_MS);
+      }
+    }
+
+    setTimeout(tick, 400);
+  }
+
+  // contador trucho de uptime, cuenta desde que abris la pagina
+  const uptimeEl = document.getElementById('hero-uptime');
+  if (uptimeEl) {
+    const start = Date.now();
+    setInterval(() => {
+      const s = Math.floor((Date.now() - start) / 1000);
+      const hh = String(Math.floor(s / 3600)).padStart(2, '0');
+      const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const ss = String(s % 60).padStart(2, '0');
+      uptimeEl.textContent = `uptime: ${hh}:${mm}:${ss}`;
+    }, 1000);
+  }
+</script>
+
+<style>
+  .hero {
+    padding: 3.5rem 0 2.5rem;
+  }
+
+  .hero-meta {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.72rem;
+    color: var(--color-muted);
+    text-transform: lowercase;
+    margin-bottom: 1.25rem;
+  }
+  .hero-meta-item::before {
+    content: '[';
+    color: var(--color-green-dim);
+  }
+  .hero-meta-item::after {
+    content: ']';
+    color: var(--color-green-dim);
+  }
+
+  .hero-name {
+    position: relative;
+    font-size: clamp(2.2rem, 7vw, 4rem);
+    letter-spacing: 0.02em;
+    color: var(--color-text);
+    margin: 0 0 0.5rem;
+    /* parpadeo tipo monitor viejo */
+    animation: crt-flicker 6s infinite;
+  }
+
+  /* las rayas horizontales encima del nombre */
+  .hero-name::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 2px,
+      rgba(10, 10, 15, 0.35) 3px,
+      transparent 4px
+    );
+  }
+
+  @keyframes crt-flicker {
+    0%, 100% { opacity: 1; }
+    92% { opacity: 1; }
+    93% { opacity: 0.86; }
+    94% { opacity: 1; }
+    97% { opacity: 0.93; }
+    98% { opacity: 1; }
+  }
+
+  .hero-role {
+    font-family: var(--font-mono);
+    font-size: clamp(1rem, 3vw, 1.4rem);
+    color: var(--color-green);
+    min-height: 1.6em;
+    margin: 0 0 1rem;
+  }
+  .hero-role-prefix {
+    color: var(--color-muted);
+    margin-right: 0.5rem;
+  }
+
+  .hero-sub {
+    font-family: var(--font-sans);
+    color: var(--color-muted);
+    max-width: 540px;
+    font-size: 0.95rem;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-name {
+      animation: none;
+    }
+  }
+</style>
