@@ -1,0 +1,439 @@
+---
+// mis certs listadas como si fuera un ls. click abre el detalle de cada una
+const certifications = [
+  {
+    id: 'cs50p',
+    index: 1,
+    name: 'CS50P — Introduction to Programming with Python',
+    issuer: 'Harvard University / CS50 (edX)',
+    status: 'completado',
+    statusKind: 'done',
+    skills: ['Python', 'POO', 'manejo de archivos', 'unit testing', 'APIs', 'herramientas CLI'],
+    note: 'El proyecto final fue un escáner de puertos entregado vía GitHub.',
+    verifyUrl: 'https://cs50.harvard.edu/certificates',
+    verifyLabel: 'verificar en cs50.harvard.edu'
+  },
+  {
+    id: 'tap',
+    index: 2,
+    name: 'Técnico Analista Programador',
+    issuer: 'INACAP Chile',
+    status: 'completado',
+    statusKind: 'done',
+    skills: ['Python', 'POO', 'Django', 'SQL', 'MongoDB', 'diseño de sistemas', 'metodología ágil'],
+    note: 'Programa base completado antes de Ingeniería en Ciberseguridad.'
+  },
+  {
+    id: 'ing-ciber',
+    index: 3,
+    name: 'Ingeniería en Ciberseguridad',
+    issuer: 'INACAP Chile',
+    status: 'en curso',
+    statusKind: 'progress',
+    skills: ['Redes de Datos', 'Arquitectura On-Premise y On-Cloud', 'Gestión de la Ciberseguridad'],
+    note: '3er año, 5to semestre. Ramos actuales listados arriba.'
+  },
+  {
+    id: 'sc500',
+    index: 4,
+    name: 'SC-500 — Microsoft Security Operations Analyst',
+    issuer: 'Microsoft',
+    status: 'próximamente',
+    statusKind: 'progress',
+    skills: ['Microsoft Sentinel', 'Defender XDR', 'KQL', 'threat hunting', 'dominios de seguridad con IA'],
+    note: 'Certificación en preparación, orientada a operaciones SOC.'
+  }
+];
+---
+
+<section class="certs-section fade-in" aria-label="Certificaciones">
+  <h2 class="certs-title">
+    <span class="certs-prompt">$</span> ls ~/certifications/
+  </h2>
+
+  <div class="certs-container" id="certs-container">
+    <ul class="certs-list">
+      {
+        certifications.map((cert) => (
+          <li>
+            <button
+              type="button"
+              class="cert-entry"
+              data-cert={cert.id}
+              aria-haspopup="dialog"
+            >
+              <span class="cert-line">
+                <span class="cert-index">[{cert.index}]</span>
+                <span class="cert-name">{cert.name}</span>
+                <span class:list={['cert-status', `cert-status--${cert.statusKind}`]}>
+                  [{cert.status}]
+                </span>
+              </span>
+              <span class="cert-extra">
+                <span class="cert-issuer">{cert.issuer}</span>
+                <span class="cert-hint">click para detalle →</span>
+              </span>
+            </button>
+          </li>
+        ))
+      }
+
+    </ul>
+
+    <div class="cert-panel" id="cert-panel" hidden role="dialog" aria-modal="false"></div>
+  </div>
+
+  {/* paso los datos al js de abajo por aca */}
+  <script type="application/json" id="certs-data" set:html={JSON.stringify(certifications)} />
+</section>
+
+<script>
+  const container = document.getElementById('certs-container');
+  const panel = document.getElementById('cert-panel');
+  const data = JSON.parse(document.getElementById('certs-data').textContent);
+  let selectedEntry = null;
+
+  // armo el panel con textContent por cualquier XSS
+  function buildPanel(cert) {
+    panel.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'cert-panel-head';
+
+    const title = document.createElement('span');
+    title.className = 'cert-panel-title';
+    title.textContent = cert.name;
+
+    const close = document.createElement('button');
+    close.className = 'cert-panel-close';
+    close.setAttribute('aria-label', 'Cerrar panel');
+    close.textContent = '✕';
+    close.addEventListener('click', closePanel);
+
+    head.append(title, close);
+
+    const meta = document.createElement('div');
+    meta.className = 'cert-panel-meta';
+
+    const issuer = document.createElement('span');
+    issuer.textContent = `emisor: ${cert.issuer}`;
+
+    const status = document.createElement('span');
+    status.className = `cert-status cert-status--${cert.statusKind}`;
+    status.textContent = `[${cert.status}]`;
+
+    meta.append(issuer, status);
+
+    const skillsLabel = document.createElement('p');
+    skillsLabel.className = 'cert-panel-label';
+    skillsLabel.textContent = '$ cat skills.txt';
+
+    const skillsList = document.createElement('ul');
+    skillsList.className = 'cert-panel-skills';
+    for (const skill of cert.skills) {
+      const li = document.createElement('li');
+      li.textContent = skill;
+      skillsList.appendChild(li);
+    }
+
+    const note = document.createElement('p');
+    note.className = 'cert-panel-note';
+    note.textContent = cert.note;
+
+    panel.append(head, meta, skillsLabel, skillsList, note);
+
+    if (cert.verifyUrl) {
+      const verify = document.createElement('a');
+      verify.className = 'cert-panel-verify';
+      verify.href = cert.verifyUrl;
+      verify.target = '_blank';
+      verify.rel = 'noopener noreferrer';
+      verify.textContent = `${cert.verifyLabel || 'verificar'} ↗`;
+      panel.appendChild(verify);
+    }
+  }
+
+  // pongo el panel debajo de la cert clickeada (o arriba si no entra)
+  function positionPanel(entry) {
+    panel.hidden = false;
+    const cRect = container.getBoundingClientRect();
+    const eRect = entry.getBoundingClientRect();
+    const margin = 8;
+
+    let y = eRect.bottom - cRect.top + 6;
+    const ph = panel.offsetHeight;
+    if (y + ph > container.offsetHeight - margin) {
+      y = Math.max(margin, eRect.top - cRect.top - ph - 6);
+    }
+
+    const pw = panel.offsetWidth;
+    let x = eRect.left - cRect.left;
+    x = Math.max(margin, Math.min(x, container.offsetWidth - pw - margin));
+
+    panel.style.left = `${x}px`;
+    panel.style.top = `${y}px`;
+  }
+
+  function openPanel(entry, cert) {
+    // uno solo abierto
+    if (selectedEntry) selectedEntry.classList.remove('selected');
+    selectedEntry = entry;
+    entry.classList.add('selected');
+    buildPanel(cert);
+    positionPanel(entry);
+  }
+
+  function closePanel() {
+    panel.hidden = true;
+    if (selectedEntry) {
+      selectedEntry.classList.remove('selected');
+      selectedEntry = null;
+    }
+  }
+
+  container.querySelectorAll('.cert-entry[data-cert]').forEach((entry) => {
+    entry.addEventListener('click', () => {
+      const cert = data.find((c) => c.id === entry.dataset.cert);
+      if (!cert) return;
+      if (selectedEntry === entry) {
+        closePanel();
+      } else {
+        openPanel(entry, cert);
+      }
+    });
+  });
+
+  // click afuera o Escape lo cierra
+  document.addEventListener('click', (e) => {
+    if (panel.hidden) return;
+    if (e.target.closest('.cert-panel') || e.target.closest('.cert-entry')) return;
+    closePanel();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePanel();
+  });
+
+  window.addEventListener('resize', closePanel);
+</script>
+
+<style is:global>
+  /* global porque el panel lo crea el js */
+  .certs-section {
+    margin: 2.5rem 0;
+  }
+
+  .certs-title {
+    font-family: var(--font-mono);
+    font-size: 1rem;
+    color: var(--color-text);
+    margin-bottom: 1rem;
+  }
+  .certs-prompt {
+    color: var(--color-green);
+  }
+
+  .certs-container {
+    position: relative;
+  }
+
+  .certs-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* cada cert parece una linea de ls */
+  .cert-entry {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: var(--color-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.6rem 0.85rem;
+    font-family: var(--font-mono);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+  }
+  .cert-entry:hover {
+    border-color: var(--color-green);
+    background: var(--color-surface);
+  }
+  .cert-entry.selected {
+    border: var(--border-active);
+    background: var(--color-surface);
+  }
+
+  .cert-line {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .cert-index {
+    color: var(--color-muted);
+    font-size: 0.74rem;
+    flex-shrink: 0;
+  }
+
+  .cert-name {
+    font-size: 0.84rem;
+    color: var(--color-green);
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .cert-status {
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    flex-shrink: 0;
+  }
+  .cert-status--done {
+    color: var(--color-green);
+  }
+  .cert-status--progress {
+    color: var(--color-violet);
+  }
+
+  /* el renglon de abajo aparece al pasar el mouse */
+  .cert-extra {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, opacity 0.25s ease, margin-top 0.25s ease;
+    font-size: 0.72rem;
+    color: var(--color-muted);
+    margin-top: 0;
+  }
+  .cert-entry:hover .cert-extra,
+  .cert-entry:focus-visible .cert-extra,
+  .cert-entry.selected .cert-extra {
+    max-height: 2.5em;
+    opacity: 1;
+    margin-top: 0.35rem;
+  }
+
+  .cert-hint {
+    color: var(--color-violet);
+    white-space: nowrap;
+  }
+
+  /* el "+ agregar" del final */
+  .cert-entry--empty {
+    border: 1px dashed var(--border-soft);
+    background: transparent;
+    cursor: default;
+  }
+  .cert-entry--empty:hover {
+    border-color: var(--border-soft);
+    background: transparent;
+  }
+  .cert-add {
+    color: var(--color-muted);
+    font-size: 0.78rem;
+  }
+
+
+  .cert-panel {
+    position: absolute;
+    z-index: 20;
+    width: 340px;
+    max-width: calc(100% - 16px);
+    background: var(--color-surface);
+    border: var(--border-active); /* borde violeta: estado seleccionado */
+    border-radius: var(--radius);
+    padding: 0.8rem 0.9rem;
+    font-family: var(--font-mono);
+  }
+
+  .cert-panel-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .cert-panel-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--color-text);
+    flex: 1;
+  }
+
+  .cert-panel-close {
+    background: transparent;
+    border: none;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    line-height: 1;
+  }
+  .cert-panel-close:hover {
+    color: var(--color-alert);
+  }
+
+  .cert-panel-meta {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    margin-bottom: 0.6rem;
+  }
+
+  .cert-panel-label {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    margin: 0 0 0.3rem;
+  }
+
+  .cert-panel-skills {
+    margin: 0 0 0.6rem;
+    padding-left: 1.1rem;
+    font-size: 0.74rem;
+    line-height: 1.55;
+    color: var(--color-text);
+  }
+  .cert-panel-skills li::marker {
+    color: var(--color-green);
+  }
+
+  .cert-panel-note {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    margin: 0 0 0.5rem;
+  }
+
+  .cert-panel-verify {
+    display: inline-block;
+    font-size: 0.72rem;
+    color: var(--color-violet);
+    border-top: 1px solid var(--border-soft);
+    padding-top: 0.5rem;
+    width: 100%;
+  }
+  .cert-panel-verify:hover {
+    color: var(--color-green);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cert-extra {
+      transition: none;
+    }
+  }
+</style>

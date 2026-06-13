@@ -2,6 +2,7 @@
 // home 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Hero from '../components/Hero.astro';
+import CertificationsBlock from '../components/CertificationsBlock.astro';
 ---
 
 <BaseLayout
@@ -10,5 +11,81 @@ import Hero from '../components/Hero.astro';
 > 
   <div class="container">
     <Hero />
+    <CertificationsBlock />
+
+        <section id="contact" class="contact fade-in" aria-label="Contacto">
+      <h2 class="section-title">
+        contacto <span class="path">~/contact</span>
+      </h2>
+      <div class="contact-grid">
+        <a class="contact-card" href="mailto:abosquezsala@gmail.com">
+          <span class="contact-label">email</span>
+          <span class="contact-value">abosquezsala@gmail.com</span>
+        </a>
+        <a
+          class="contact-card"
+          href="https://github.com/arielbosquez"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="contact-label">github</span>
+          <span class="contact-value">github.com/arielbosquez</span>
+        </a>
+        <a
+          class="contact-card"
+          href="https://www.linkedin.com/in/ariel-bosquez-salazar"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <span class="contact-label">linkedin</span>
+          <span class="contact-value">linkedin.com/in/ariel-bosquez-salazar</span>
+        </a>
+      </div>
+    </section>
+    
   </div>
 </BaseLayout>
+
+<style>
+  .contact {
+    margin-top: 3rem;
+  }
+
+  .contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.85rem;
+  }
+
+  .contact-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    padding: 0.9rem 1rem;
+    transition: border-color 0.2s ease;
+  }
+  .contact-card:hover {
+    border-color: var(--color-green);
+    text-decoration: none;
+  }
+
+  .contact-label {
+    font-size: 0.68rem;
+    color: var(--color-green);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .contact-label::before {
+    content: '$ ';
+    color: var(--color-muted);
+  }
+
+  .contact-value {
+    font-size: 0.82rem;
+    color: var(--color-text);
+    word-break: break-all;
+  }
+</style>
