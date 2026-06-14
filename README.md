@@ -1,4 +1,4 @@
-# Portafolio — Ariel Bosquez
+# Portafolio Ariel Bosquez
 
 Sitio personal de presentación para proyectos, skills, contacto y cosas personales.
 
