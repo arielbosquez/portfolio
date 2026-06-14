@@ -1,0 +1,467 @@
+---
+// las skills girando alrededor del nucleo, tipo sistema solar
+// hover frena el planeta, click abre el panel con el detalle
+---
+
+<section class="orbit-section fade-in" aria-label="Habilidades en órbita">
+  <div class="orbit-container" id="orbit-container">
+    <canvas id="orbit-canvas" aria-label="Visualización orbital de habilidades técnicas"></canvas>
+    <div class="orbit-panel" id="orbit-panel" hidden role="dialog" aria-modal="false"></div>
+    <p class="orbit-hint">// click en un planeta para ver el detalle</p>
+  </div>
+</section>
+
+<script>
+  import { SKILLS, CATEGORIES } from '../data/skills.js';
+
+  const container = document.getElementById('orbit-container');
+  const canvas = document.getElementById('orbit-canvas');
+  const panel = document.getElementById('orbit-panel');
+  const ctx = canvas.getContext('2d');
+
+  let width = 0;
+  let height = 0;
+  let dpr = 1;
+  let hoveredId = null;
+  let selectedId = null;
+  let mouseX = -1;
+  let mouseY = -1;
+
+  // reparto los planetas con el angulo aureo asi no se amontonan.
+  // la velocidad baja con el radio (los de afuera mas lentos, como kepler)
+  const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
+  const planets = SKILLS.map((skill, i) => {
+    const t = SKILLS.length === 1 ? 0 : i / (SKILLS.length - 1);
+    // arranco en 0.42 para no pisar el nucleo del medio
+    const orbitT = 0.42 + t * 0.58;
+    return {
+      skill,
+      orbitT,
+      angle: i * GOLDEN_ANGLE,
+      baseSpeed: 0.00135 / Math.pow(orbitT, 1.5),
+      speedFactor: 1, // baja en hover, 0 cuando esta seleccionado
+      x: 0,
+      y: 0
+    };
+  });
+
+  function resize() {
+    const rect = container.getBoundingClientRect();
+    width = rect.width;
+    // en mobile lo achico para que entre
+    height = width < 560 ? Math.max(360, width) : Math.min(620, width * 0.72);
+    dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function metrics() {
+    const cx = width / 2;
+    const cy = height / 2;
+    const maxOrbit = Math.min(width, height) / 2 - 36;
+    const small = width < 560;
+    return {
+      cx,
+      cy,
+      maxOrbit,
+      coreR: small ? 22 : 30,
+      planetR: small ? 11 : 15
+    };
+  }
+
+  const PROMPT_SEGMENTS = [
+    { text: 'ariel@:~$', color: '#00ff9d' },
+  ];
+
+  function drawCore(cx, cy, coreR, time, small) {
+    // late un poco
+    const pulse = 1 + Math.sin(time / 900) * 0.05;
+
+    // el unico glow del sitio va aca
+    ctx.save();
+    ctx.shadowColor = 'rgba(0, 255, 157, 0.45)';
+    ctx.shadowBlur = 14;
+    ctx.beginPath();
+    ctx.arc(cx, cy, coreR * pulse, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(0, 255, 157, 0.10)';
+    ctx.fill();
+    ctx.strokeStyle = '#00ff9d';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+
+    // centro el texto del prompt + el cursor
+    const fontSize = small ? 9 : 11;
+    ctx.font = `600 ${fontSize}px Consolas, monospace`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+
+    const cursorW = fontSize * 0.55;
+    const cursorGap = fontSize * 0.25;
+    let totalW = cursorW + cursorGap;
+    for (const seg of PROMPT_SEGMENTS) {
+      totalW += ctx.measureText(seg.text).width;
+    }
+
+    let x = cx - totalW / 2;
+    for (const seg of PROMPT_SEGMENTS) {
+      ctx.fillStyle = seg.color;
+      ctx.fillText(seg.text, x, cy);
+      x += ctx.measureText(seg.text).width;
+    }
+
+    // cursor que parpadea
+    if (time % 1100 < 550) {
+      ctx.fillStyle = '#00ff9d';
+      ctx.fillRect(x + cursorGap, cy - fontSize / 2, cursorW, fontSize);
+    }
+  }
+
+  function drawPlanet(p, planetR) {
+    const color = CATEGORIES[p.skill.category].color;
+    const isHovered = hoveredId === p.skill.id;
+    const isSelected = selectedId === p.skill.id;
+
+    if (isHovered || isSelected) {
+      // aro extra cuando lo apuntas
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, planetR + 5, 0, Math.PI * 2);
+      ctx.strokeStyle = color;
+      ctx.globalAlpha = 0.5;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, planetR, 0, Math.PI * 2);
+    ctx.fillStyle = '#0a0a0f';
+    ctx.fill();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = isHovered || isSelected ? 2 : 1.2;
+    ctx.stroke();
+
+    ctx.fillStyle = color;
+    ctx.font = `600 ${planetR * 0.62}px Consolas, monospace`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(p.skill.abbr, p.x, p.y);
+
+    // muestro el nombre abajo cuando esta activo
+    if (isHovered || isSelected) {
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '11px Consolas, monospace';
+      ctx.fillText(p.skill.name, p.x, p.y + planetR + 14);
+    }
+  }
+
+  let lastTime = 0;
+  function frame(time) {
+    const dt = Math.min(time - lastTime, 50) || 16;
+    lastTime = time;
+
+    const { cx, cy, maxOrbit, coreR, planetR } = metrics();
+    ctx.clearRect(0, 0, width, height);
+
+    // los aros de las orbitas, casi transparentes
+    for (const p of planets) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, p.orbitT * maxOrbit, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 255, 157, 0.10)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    drawCore(cx, cy, coreR, time, width < 560);
+
+    let newHovered = null;
+
+    for (const p of planets) {
+      const isSelected = selectedId === p.skill.id;
+      const targetFactor = isSelected ? 0 : hoveredId === p.skill.id ? 0.08 : 1;
+      // no freno de golpe, lo llevo de a poco a la velocidad que toca
+      p.speedFactor += (targetFactor - p.speedFactor) * 0.12;
+      p.angle += p.baseSpeed * p.speedFactor * (dt / 16);
+
+      const r = p.orbitT * maxOrbit;
+      p.x = cx + Math.cos(p.angle) * r;
+      p.y = cy + Math.sin(p.angle) * r;
+
+      const dx = mouseX - p.x;
+      const dy = mouseY - p.y;
+      if (dx * dx + dy * dy <= (planetR + 5) * (planetR + 5)) {
+        newHovered = p.skill.id;
+      }
+    }
+
+    hoveredId = newHovered;
+    canvas.style.cursor = hoveredId ? 'pointer' : 'default';
+
+    for (const p of planets) drawPlanet(p, planetR);
+
+    requestAnimationFrame(frame);
+  }
+
+  function buildPanel(skill) {
+    const cat = CATEGORIES[skill.category];
+    panel.innerHTML = '';
+
+    const head = document.createElement('div');
+    head.className = 'orbit-panel-head';
+
+    const title = document.createElement('span');
+    title.className = 'orbit-panel-title';
+    title.textContent = skill.name;
+
+    const badge = document.createElement('span');
+    badge.className = 'orbit-panel-badge';
+    badge.textContent = cat.label;
+    badge.style.color = cat.color;
+    badge.style.borderColor = cat.color;
+
+    const close = document.createElement('button');
+    close.className = 'orbit-panel-close';
+    close.setAttribute('aria-label', 'Cerrar panel');
+    close.textContent = '✕';
+    close.addEventListener('click', closePanel);
+
+    head.append(title, badge, close);
+
+    // la barrita de nivel, 4 cuadritos
+    const levelRow = document.createElement('div');
+    levelRow.className = 'orbit-panel-level';
+    const segments = document.createElement('span');
+    segments.className = 'orbit-panel-segments';
+    for (let i = 1; i <= 4; i++) {
+      const seg = document.createElement('span');
+      seg.className = 'orbit-panel-seg' + (i <= skill.level ? ' filled' : '');
+      segments.appendChild(seg);
+    }
+    const levelLabel = document.createElement('span');
+    levelLabel.className = 'orbit-panel-level-label';
+    levelLabel.textContent = skill.levelLabel;
+    levelRow.append(segments, levelLabel);
+
+    const list = document.createElement('ul');
+    list.className = 'orbit-panel-list';
+    for (const bullet of skill.bullets) {
+      const li = document.createElement('li');
+      li.textContent = bullet;
+      list.appendChild(li);
+    }
+
+    const related = document.createElement('div');
+    related.className = 'orbit-panel-related';
+    related.textContent = `relacionado: ${skill.related.join(' · ')}`;
+
+    panel.append(head, levelRow, list, related);
+  }
+
+  function positionPanel(planet) {
+    const { planetR } = metrics();
+    panel.hidden = false;
+
+    const pw = panel.offsetWidth;
+    const ph = panel.offsetHeight;
+    const margin = 8;
+
+    // primero pruebo ponerlo a la derecha
+    let x = planet.x + planetR + 14;
+    let y = planet.y - ph / 2;
+
+    // si no entra, lo mando a la izquierda
+    if (x + pw > width - margin) {
+      x = planet.x - planetR - 14 - pw;
+    }
+    // y al final lo encierro dentro del canvas igual
+    x = Math.max(margin, Math.min(x, width - pw - margin));
+    y = Math.max(margin, Math.min(y, height - ph - margin));
+
+    panel.style.left = `${x}px`;
+    panel.style.top = `${y}px`;
+  }
+
+  function openPanel(planet) {
+    // solo uno a la vez
+    selectedId = planet.skill.id;
+    buildPanel(planet.skill);
+    positionPanel(planet);
+  }
+
+  function closePanel() {
+    selectedId = null;
+    panel.hidden = true;
+  }
+
+  function pointerPos(e) {
+    const rect = canvas.getBoundingClientRect();
+    return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+  }
+
+  canvas.addEventListener('mousemove', (e) => {
+    const pos = pointerPos(e);
+    mouseX = pos.x;
+    mouseY = pos.y;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    mouseX = -1;
+    mouseY = -1;
+  });
+
+  canvas.addEventListener('click', (e) => {
+    const pos = pointerPos(e);
+    const { planetR } = metrics();
+    const hit = planets.find((p) => {
+      const dx = pos.x - p.x;
+      const dy = pos.y - p.y;
+      return dx * dx + dy * dy <= (planetR + 6) * (planetR + 6);
+    });
+
+    if (hit) {
+      openPanel(hit);
+    } else {
+      closePanel(); // click al vacio = cerrar
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closePanel();
+  });
+
+  window.addEventListener('resize', () => {
+    resize();
+    closePanel();
+  });
+
+  resize();
+  requestAnimationFrame(frame);
+</script>
+
+<style is:global>
+  .orbit-section {
+    margin: 1rem 0 2rem;
+  }
+
+  /* sin borde ni fondo, asi se ven las particulas detras.
+     dejo el relative solo para poder posicionar el panel */
+  .orbit-container {
+    position: relative;
+  }
+
+  #orbit-canvas {
+    display: block;
+    width: 100%;
+  }
+
+  .orbit-hint {
+    position: absolute;
+    bottom: 0.4rem;
+    left: 0.75rem;
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    color: var(--color-muted);
+    pointer-events: none;
+  }
+
+  /* el panelito que sale al clickear un planeta */
+  .orbit-panel {
+    position: absolute;
+    z-index: 10;
+    width: 280px;
+    max-width: calc(100% - 16px);
+    background: var(--color-surface);
+    border: var(--border-active); /* borde violeta: estado seleccionado */
+    border-radius: var(--radius);
+    padding: 0.75rem 0.85rem;
+    font-family: var(--font-mono);
+  }
+
+  .orbit-panel-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .orbit-panel-title {
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--color-text);
+  }
+
+  .orbit-panel-badge {
+    font-size: 0.62rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border: 1px solid;
+    border-radius: var(--radius);
+    padding: 0.05rem 0.35rem;
+  }
+
+  .orbit-panel-close {
+    margin-left: auto;
+    background: transparent;
+    border: none;
+    color: var(--color-muted);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    line-height: 1;
+  }
+  .orbit-panel-close:hover {
+    color: var(--color-alert);
+  }
+
+  .orbit-panel-level {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .orbit-panel-segments {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .orbit-panel-seg {
+    width: 18px;
+    height: 7px;
+    border: 1px solid var(--border);
+    background: transparent;
+  }
+  .orbit-panel-seg.filled {
+    background: var(--color-green);
+    border-color: var(--color-green);
+  }
+
+  .orbit-panel-level-label {
+    font-size: 0.68rem;
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .orbit-panel-list {
+    margin: 0 0 0.6rem;
+    padding-left: 1.1rem;
+    font-size: 0.74rem;
+    line-height: 1.55;
+    color: var(--color-text);
+  }
+  .orbit-panel-list li::marker {
+    color: var(--color-green);
+  }
+
+  .orbit-panel-related {
+    font-size: 0.68rem;
+    color: var(--color-violet);
+    border-top: 1px solid var(--border-soft);
+    padding-top: 0.5rem;
+  }
+</style>

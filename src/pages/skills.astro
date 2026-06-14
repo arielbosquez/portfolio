@@ -1,24 +1,150 @@
 ---
-// skills: pendiente
+// skills agrego un orgit y debajo una lista
 import BaseLayout from '../layouts/BaseLayout.astro';
+import OrbitCanvas from '../components/OrbitCanvas.astro';
+import CertificationsBlock from '../components/CertificationsBlock.astro';
+import { SKILLS, CATEGORIES } from '../data/skills.js';
+
+// agrupo por categoria respetando el orden de CATEGORIES
+const grouped = Object.entries(CATEGORIES).map(([key, cat]) => ({
+  key,
+  ...cat,
+  skills: SKILLS.filter((s) => s.category === key)
+}));
 ---
 
-<BaseLayout title="Habilidades — Ariel Bosquez">
+<BaseLayout
+  title="Habilidades"
+  description="Habilidades técnicas de Ariel Bosquez: seguridad (Ley 21.663, NIST, MITRE ATT&CK), backend, frontend, bases de datos e infraestructura."
+>
   <div class="container">
     <header class="page-head">
-      <h1>Habilidades</h1>
-      <p class="page-intro">Proximamente.</p>
+      <h1 class="section-title">
+        habilidades <span class="path">~/skills · ./orbit --interactive</span>
+      </h1>
+      <p class="page-intro">
+        Habilidades, lenguajes que manejo e información de cada una. 
+      </p>
     </header>
+
+    <OrbitCanvas />
+
+    <CertificationsBlock />
+
+    <section class="skill-index" aria-label="Índice de habilidades por categoría">
+      <h2 class="section-title">
+        índice <span class="path">cat skills.txt</span>
+      </h2>
+      <div class="skill-groups">
+        {
+          grouped.map((group) => (
+            <div class="skill-group fade-in">
+              <h3 class="skill-group-title" style={`color: ${group.color}`}>
+                [{group.label}]
+              </h3>
+              <ul class="skill-group-list">
+                {group.skills.map((skill) => (
+                  <li class="skill-row">
+                    <span class="skill-name">{skill.name}</span>
+                    <span class="skill-level" aria-label={`Nivel: ${skill.levelLabel}`}>
+                      <span class="skill-dots" aria-hidden="true">
+                        {Array.from({ length: 4 }, (_, i) => (
+                          <span class:list={['dot', { on: i < skill.level }]} />
+                        ))}
+                      </span>
+                      {skill.levelLabel}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))
+        }
+      </div>
+    </section>
   </div>
 </BaseLayout>
 
 <style>
   .page-head {
-    padding: 3rem 0;
+    padding: 2.5rem 0 1rem;
   }
 
   .page-intro {
     color: var(--color-muted);
     font-size: 0.9rem;
+    max-width: 560px;
+  }
+
+  .skill-index {
+    margin-top: 3rem;
+  }
+
+  .skill-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .skill-group {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    padding: 0.9rem 1rem;
+  }
+
+  .skill-group-title {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.7rem;
+  }
+
+  .skill-group-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+  }
+
+  .skill-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .skill-name {
+    color: var(--color-text);
+  }
+
+  .skill-level {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    color: var(--color-muted);
+    font-size: 0.66rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .skill-dots {
+    display: inline-flex;
+    gap: 3px;
+  }
+
+  .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+  }
+  .dot.on {
+    background: var(--color-green);
+    border-color: var(--color-green);
   }
 </style>
