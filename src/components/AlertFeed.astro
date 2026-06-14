@@ -27,51 +27,51 @@
   const entries = [
     {
       sev: 'FRAMEWORK',
-      text: 'NIST SP 800-61 Rev.2 — Ciclo de respuesta a incidentes: Preparación → Detección → Contención → Erradicación → Recuperación'
+      text: 'NIST 800-61r2 — ciclo IR: Prep → Detección → Contención → Erradicación → Recuperación'
     },
     {
       sev: 'REGULATION',
-      text: 'Ley Marco Ciberseguridad 21.663 — Operadores de Importancia Vital (OIV) obligados a reportar incidentes críticos en 72h'
+      text: 'Ley 21.663 — OIVs deben reportar incidente crítico a ANCI en ≤72h'
     },
     {
       sev: 'ALERT',
-      text: 'MITRE ATT&CK T1566.001 — Spearphishing Attachment: vector de acceso inicial frecuente en campañas dirigidas'
+      text: 'T1566.001 — Spearphishing Attachment: acceso inicial vía macro Office o PDF con link embed'
     },
     {
       sev: 'INFO',
-      text: 'Regla de correlación: auth fallida > 5 intentos en 60s → alerta de fuerza bruta (SIEM: Splunk / Elastic)'
+      text: 'Regla SIEM: auth_fail > 5 en 60s → alerta fuerza bruta (Splunk / Elastic)'
     },
     {
       sev: 'CRITICAL',
-      text: 'LockBit 4.0 — Modelo RaaS, doble extorsión, apunta a infraestructura crítica. Comportamiento clasificado APT'
+      text: 'LockBit 4.0 — RaaS, doble extorsión: exfiltra primero, cifra después'
     },
     {
       sev: 'FRAMEWORK',
-      text: 'ISO/IEC 27001 — Control A.8.15 del Anexo A: logging y monitoreo como control obligatorio para OIVs'
+      text: 'ISO 27001 A.8.15 — sin logging no hay IR posible ni cumplimiento legal'
     },
     {
       sev: 'ALERT',
-      text: 'Escalada de privilegios vía sudoers mal configurado — paso post-explotación común en hosts Linux (HTB: Silentium)'
+      text: 'privesc: sudo -l → NOPASSWD en binario raro → root (HTB: Silentium)'
     },
     {
       sev: 'INFO',
-      text: 'MITRE ATT&CK T1110 — Brute Force: mitigación primaria con lockout policy y MFA en cuentas expuestas'
+      text: 'T1110 — lockout mal afinado puede usarse como DoS de cuentas. Mejor: MFA + detección temprana'
+    },
+    {
+      sev: 'CRITICAL',
+      text: 'CVE-2025-8110 — privesc en Gogs, explotado en Silentium. Requiere parchear o aislar.'
+    },
+    {
+      sev: 'FRAMEWORK',
+      text: 'NIST CSF 2.0 — función Govern: sin ella las otras cinco no tienen dirección estratégica'
     },
     {
       sev: 'REGULATION',
-      text: 'Ley 21.663 — ANCI como autoridad: facultad de fiscalizar y sancionar incumplimientos de reporte'
-    },
-    {
-      sev: 'CRITICAL',
-      text: 'CVE-2025-8110 — Escalada de privilegios en Gogs: parchear o aislar instancias expuestas a internet'
-    },
-    {
-      sev: 'FRAMEWORK',
-      text: 'NIST CSF 2.0 — Funciones: Govern, Identify, Protect, Detect, Respond, Recover'
+      text: 'ANCI — autoridad nacional de ciberseguridad, facultad de fiscalizar y sancionar OIVs'
     },
     {
       sev: 'INFO',
-      text: 'Triage SOC: priorizar por criticidad de activo + confiabilidad de la fuente antes de escalar a N2'
+      text: 'SOC triage: alerta media en servidor de producción pesa más que alerta alta en VM de prueba'
     }
   ];
 
