@@ -3,7 +3,7 @@
 :root {
   /* colores base */
   --color-bg: #0a0a0f;
-  --color-surface: #14141f; /* tarjetas y paneles */
+  --color-surface: #10101a; /* tarjetas y paneles */
   --color-text: #e2e8f0;
   --color-muted: #8892a4; /* texto secundario */
 
@@ -15,7 +15,7 @@
 
   /* bordes */
   --border: rgba(0, 255, 157, 0.3);
-  --border-active: 1px solid var(--color-violet); /* el que esta seleccionado */
+  --border-active: 1px solid var(--color-violet); 
   --border-soft: rgba(136, 146, 164, 0.18);
 
   --font-mono: 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas,
@@ -138,7 +138,7 @@ code {
 }
 .badge--alert {
   color: var(--color-alert);
-  text-shadow: 0 0 8px rgba(255, 51, 102, 0.45); /* glow solo aca */
+  text-shadow: 0 0 8px rgba(255, 51, 102, 0.45); 
 }
 .badge--muted {
   color: var(--color-muted);
