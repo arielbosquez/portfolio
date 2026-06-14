@@ -1,24 +1,116 @@
 ---
-// proyectos: todavia vacio, lo voy a llenar despues
+// proyectos
 import BaseLayout from '../layouts/BaseLayout.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+
+
+const projects = [
+  {
+    title: 'port-scanner-cli',
+    kind: 'Seguridad',
+    description:
+      'Herramienta de línea de comandos para escanear puertos abiertos en hosts objetivo. Proyecto final de CS50P (Harvard), entregado vía GitHub.',
+    longDescription:
+      'Escáner TCP escrito en Python puro: resolución de hostnames, escaneo de rangos de puertos con sockets y timeouts configurables, y salida formateada por consola. Interfaz construida con argparse (objetivo, rango y verbosidad como flags). Incluye pruebas unitarias siguiendo los requisitos de entrega de CS50P.',
+    tags: ['Python', 'socket', 'argparse'],
+    github: 'https://github.com/arielbosquez'
+  },
+  {
+    title: 'htb-silentium-writeup',
+    kind: 'Investigación',
+    description:
+      'Writeup de la máquina Silentium de Hack The Box: bypass de autenticación en Flowise AI, RCE en Node.js y escalada de privilegios en Gogs.',
+    longDescription:
+      'Cuaderno de hacking con metodología ofensiva documentada paso a paso: enumeración inicial, bypass de autenticación en Flowise AI, ejecución remota de código en Node.js a través del endpoint customMCP y escalada de privilegios en Gogs explotando CVE-2025-8110. Cada fase incluye los comandos usados y el razonamiento detrás.',
+    tags: ['Flowise', 'Node.js RCE', 'CVE-2025-8110', 'Linux'],
+    github: 'https://github.com/arielbosquez'
+  },
+  {
+    title: 'portfolio',
+    kind: 'Web',
+    description:
+      'Este sitio: Astro como base, JavaScript vanilla para la terminal interactiva, sistema orbital de habilidades en Canvas y feed SOC simulado.',
+    longDescription:
+      'Construido sin librerías de UI ni de gráficos: terminal interactiva con comandos reales, sistema solar de habilidades sobre Canvas con requestAnimationFrame, feed de inteligencia tipo SOC y diseño responsivo con CSS puro. El código es parte del portafolio: legible, comentado y desplegable como sitio estático.',
+    tags: ['Astro', 'JavaScript', 'Canvas API', 'CSS'],
+    github: 'https://github.com/arielbosquez'
+  }
+];
 ---
 
-<BaseLayout title="Proyectos — Ariel Bosquez">
+<BaseLayout
+  title="Proyectos"
+  description="Proyectos de Ariel Bosquez: herramientas de seguridad en Python, writeups de Hack The Box y desarrollo web con Astro y Canvas."
+>
   <div class="container">
     <header class="page-head">
-      <h1>Proyectos</h1>
-
+      <h1 class="section-title">
+        proyectos <span class="path">~/projects · ls -la</span>
+      </h1>
+      <p class="page-intro">
+        Proyectos propios y en los que estoy trabajando.
+      </p>
     </header>
+
+    <div class="projects-grid">
+      {projects.map((p) => <ProjectCard {...p} />)}
+
+      <article class="project-placeholder fade-in" aria-label="Más proyectos en camino">
+        <span class="placeholder-cursor">▮</span>
+        <p class="placeholder-text">// más proyectos en camino</p>
+        <p class="placeholder-sub">git commit -m "wip"</p>
+      </article>
+    </div>
   </div>
 </BaseLayout>
 
 <style>
   .page-head {
-    padding: 3rem 0;
+    padding: 2.5rem 0 1rem;
   }
 
   .page-intro {
     color: var(--color-muted);
     font-size: 0.9rem;
+    max-width: 560px;
+  }
+
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .project-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    border: 1px dashed var(--border-soft);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    min-height: 150px;
+  }
+
+  .placeholder-cursor {
+    color: var(--color-green);
+    animation: blink 1.05s steps(1) infinite;
+  }
+
+  .placeholder-text {
+    font-family: var(--font-mono);
+    color: var(--color-muted);
+    font-size: 0.82rem;
+    margin: 0;
+  }
+
+  .placeholder-sub {
+    font-family: var(--font-mono);
+    color: var(--color-green-dim);
+    font-size: 0.7rem;
+    margin: 0;
   }
 </style>
+

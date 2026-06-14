@@ -1,35 +1,286 @@
 ---
-// tarjeta basica de proyecto, titulo y descripcion nomas
+// tarjeta de proyecto, titulo y descripcion como ventana de terminal
 interface Props {
   title: string;
   description: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, longDescription, tags, github, kind } = Astro.props;
 ---
 
-<article class="project-card">
-  <h3 class="project-title">{title}</h3>
-  <p class="project-desc">{description}</p>
+<article class="project-card fade-in" tabindex="0">
+  <div class="pc-bar" aria-hidden="true">
+    <span class="pc-sym pc-sym--min">[–]</span>
+    <span class="pc-sym pc-sym--max">[■]</span>
+    <span class="pc-sym pc-sym--close">[×]</span>
+    <span class="pc-path">~/projects/{title}</span>
+  </div>
+
+  <div class="pc-body">
+    <header class="pc-head">
+      <h3 class="pc-title">
+        <span class="pc-prompt">$</span>
+        <span class="pc-typed" data-title={title}>{title}</span><span class="pc-caret" aria-hidden="true"></span>
+      </h3>
+      {kind && <span class="badge badge--violet">{kind}</span>}
+    </header>
+
+    <p class="pc-desc">{description}</p>
+
+    <div class="pc-readme">
+      <p class="pc-readme-cmd">$ cat README.md</p>
+      <p class="pc-readme-text">{longDescription}</p>
+    </div>
+
+    <footer class="pc-foot">
+      <ul class="pc-tags">
+        {tags.map((tag) => <li class="pc-tag">{tag}</li>)}
+      </ul>
+      {
+        github && (
+          <a
+            class="pc-link"
+            href={github}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            github ↗
+          </a>
+        )
+      }
+    </footer>
+  </div>
 </article>
+
+<script>
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function typeTitle(el) {
+    const full = el.dataset.title || el.textContent;
+    const caret = el.nextElementSibling;
+    el.textContent = '';
+    let i = 0;
+    const interval = setInterval(() => {
+      el.textContent = full.slice(0, ++i);
+      if (i >= full.length) {
+        clearInterval(interval);
+        if (caret) caret.classList.add('done');
+      }
+    }, 45);
+  }
+
+  // espero a que la tarjeta se vea para arrancar el tipeo (una sola vez)
+  const titleObserver = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          typeTitle(entry.target);
+          titleObserver.unobserve(entry.target);
+        }
+      }
+    },
+    { threshold: 0.4 }
+  );
+
+  document.querySelectorAll('.pc-typed').forEach((el) => {
+    if (reduceMotion) {
+      el.nextElementSibling?.classList.add('done');
+    } else {
+      titleObserver.observe(el);
+    }
+  });
+
+  // en celu no hay hover, asi que el click abre/cierra el readme
+  document.querySelectorAll('.project-card').forEach((card) => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      card.classList.toggle('expanded');
+    });
+  });
+</script>
 
 <style>
   .project-card {
+    display: flex;
+    flex-direction: column;
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    background: var(--color-bg);
+    transition: border-color 0.25s ease, background-color 0.25s ease;
+    cursor: default;
+  }
+  /* en hover se enciende el borde y cambia el fondo */
+  .project-card:hover,
+  .project-card:focus-within {
+    border-color: var(--color-green);
     background: var(--color-surface);
-    padding: 1rem 1.2rem;
   }
 
-  .project-title {
+  /* la barrita de arriba con los [-][x], solo decoracion */
+  .pc-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid var(--border-soft);
+    font-size: 0.62rem;
+    user-select: none;
+  }
+  .pc-sym {
+    color: var(--color-muted);
+  }
+  .project-card:hover .pc-sym--close {
+    color: var(--color-alert);
+  }
+  .project-card:hover .pc-sym--max {
+    color: var(--color-green);
+  }
+  .project-card:hover .pc-sym--min {
+    color: var(--color-violet);
+  }
+  .pc-path {
+    margin-left: auto;
+    color: var(--color-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pc-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem 1rem;
+    flex: 1;
+  }
+
+  .pc-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .pc-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
     font-size: 0.95rem;
     color: var(--color-green);
-    margin: 0 0 0.4rem;
+    margin: 0;
+    min-height: 1.4em;
+  }
+  .pc-prompt {
+    color: var(--color-muted);
+  }
+  .pc-caret {
+    display: inline-block;
+    width: 0.5em;
+    height: 1.05em;
+    background: var(--color-green);
+    animation: blink 1.05s steps(1) infinite;
+  }
+  .pc-caret.done {
+    opacity: 0.45;
   }
 
-  .project-desc {
+  .pc-desc {
     font-size: 0.85rem;
     color: var(--color-text);
     margin: 0;
+    flex: 1;
+  }
+
+  /* el readme arranca cerrado y se abre en hover/focus/click */
+  .pc-readme {
+    max-height: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.3s ease;
+    border-left: 2px solid var(--border);
+  }
+  .project-card:hover .pc-readme,
+  .project-card:focus-within .pc-readme,
+  .project-card.expanded .pc-readme {
+    max-height: 280px;
+    opacity: 1;
+  }
+  .pc-readme-cmd {
+    font-family: var(--font-mono);
+    color: var(--color-muted);
+    font-size: 0.72rem;
+    margin: 0.3rem 0 0.25rem 0.7rem;
+  }
+  .pc-readme-text {
+    font-family: var(--font-mono);
+    color: var(--color-text);
+    font-size: 0.74rem;
+    line-height: 1.6;
+    margin: 0 0 0.35rem 0.7rem;
+  }
+
+  .pc-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-top: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .pc-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* los tags como badge de consola */
+  .pc-tag {
+    font-family: var(--font-mono);
+    font-size: 0.66rem;
+    color: var(--color-green);
+    background: var(--color-bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 0.1rem 0.45rem;
+    opacity: 0.55;
+    transform: translateY(3px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+  }
+  /* los voy mostrando uno por uno con el delay de abajo */
+  .project-card:hover .pc-tag,
+  .project-card:focus-within .pc-tag {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .pc-tag:nth-child(1) { transition-delay: 0ms; }
+  .pc-tag:nth-child(2) { transition-delay: 60ms; }
+  .pc-tag:nth-child(3) { transition-delay: 120ms; }
+  .pc-tag:nth-child(4) { transition-delay: 180ms; }
+  .pc-tag:nth-child(5) { transition-delay: 240ms; }
+  .pc-tag:nth-child(6) { transition-delay: 300ms; }
+
+  .pc-link {
+    font-size: 0.76rem;
+    color: var(--color-violet);
+    white-space: nowrap;
+  }
+  .pc-link:hover {
+    color: var(--color-green);
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pc-tag {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+    .pc-readme {
+      transition: none;
+    }
   }
 </style>
